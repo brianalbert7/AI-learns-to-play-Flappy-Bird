@@ -1,3 +1,9 @@
+"""
+AI learns to play Flappy Bird
+
+Date Modified: 5/23/2020
+Author: Brian Albert
+"""
 import neat
 import pygame
 import os
