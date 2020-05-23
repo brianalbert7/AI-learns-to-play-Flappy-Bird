@@ -21,6 +21,7 @@ BG_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bg.png
 
 STAT_FONT = pygame.font.SysFont("comicsans", 50)
 
+# Bird class represents the flappy bird
 class Bird:
     IMGS = BIRD_IMGS
     MAX_ROTATION = 25
@@ -37,11 +38,13 @@ class Bird:
         self.img_count = 0
         self.img = self.IMGS[0]
 
+    # makes the bird jump
     def jump(self):
         self.vel = -10.5
         self.tick_count = 0
         self.height = self.y
 
+    # moves the bird
     def move(self):
         self.tick_count += 1
 
@@ -62,6 +65,7 @@ class Bird:
             if self.tilt > -90:
                 self.tilt -= self.ROT_VEL
 
+    # draws the bird onto the window
     def draw(self, win):
         self.img_count += 1
 
@@ -85,10 +89,12 @@ class Bird:
         new_rect = rotated_image.get_rect(center = self.img.get_rect(topleft = (self.x, self.y)).center)
         win.blit(rotated_image, new_rect.topleft)
 
+    # gets the mask of the bird
     def get_mask(self):
         return pygame.mask.from_surface(self.img)
 
 
+# Pipe class represents the pipes inside of the game
 class Pipe:
     GAP = 200
     VEL = 5
@@ -105,18 +111,23 @@ class Pipe:
         self.passed = False
         self.set_height()
 
+    # sets the height of both top and bottom pipes
     def set_height(self):
         self.height = random.randrange(50,450)
         self.top = self.height - self.PIPE_TOP.get_height()
         self.bottom = self.height + self.GAP
 
+    # moves the pipes towards the bird
     def move(self):
         self.x -= self.VEL
 
+    # draws the pipes in the window
     def draw(self, win):
         win.blit(self.PIPE_TOP, (self.x, self.top))
         win.blit(self.PIPE_BOTTOM, (self.x, self.bottom))
 
+    # returns whether or not the bird collided with one of the pipes
+    # collide uses masking so it will perfectly detect if there is a collision
     def collide(self, bird):
         bird_mask = bird.get_mask()
         top_mask = pygame.mask.from_surface(self.PIPE_TOP)
@@ -133,7 +144,7 @@ class Pipe:
         
         return False
 
-
+# Base class for creating the base platform
 class Base:
     VEL = 5
     WIDTH = BASE_IMG.get_width()
@@ -144,26 +155,30 @@ class Base:
         self.x1 = 0
         self.x2 = self.WIDTH
 
+    # moves the base
     def move(self):
         self.x1 -= self.VEL
         self.x2 -= self.VEL
 
+        # gives the base the effect that it is never ending
+        # if a base image passes the window, put it behind the next base image
         if self.x1 + self.WIDTH < 0:
             self.x1 = self.x2 + self.WIDTH
 
         if self.x2 + self.WIDTH < 0:
             self.x2 = self.x1 + self.WIDTH
 
+    #draws the base onto the window
     def draw(self, win):
         win.blit(self.IMG, (self.x1, self.y))
         win.blit(self.IMG, (self.x2, self.y))
-
 
 def draw_window(win, birds, pipes, base, score):
     win.blit(BG_IMG, (0,0))
     for pipe in pipes:
         pipe.draw(win)
 
+    # Displays the score
     text = STAT_FONT.render("Score: " + str(score), 1, (255, 255, 255))
     win.blit(text, (WIN_WIDTH - 10 - text.get_width(), 10))
 
@@ -202,6 +217,7 @@ def main(genomes, config):
                 pygame.quit()
                 quit()
 
+        # detecting whether bird should look at first or second pipe on the screen
         pipe_ind = 0
         if len(birds) > 0:
             if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():
@@ -210,6 +226,7 @@ def main(genomes, config):
             run = False
             break
 
+        # adding fitness for the birds being able to move
         for x, bird in enumerate(birds):
             bird.move()
             ge[x].fitness += 0.1
@@ -221,6 +238,7 @@ def main(genomes, config):
 
         add_pipe = False
         rem = []
+        # decreasing fitness when bird collides with a pipe
         for pipe in pipes:
             for x, bird in enumerate(birds):
                 if pipe.collide(bird):
@@ -238,6 +256,7 @@ def main(genomes, config):
 
             pipe.move()
 
+        # bird passes the pipe so increase the score and the fitness
         if add_pipe:
             score += 1
             for g in ge:
@@ -247,6 +266,7 @@ def main(genomes, config):
         for r in rem:
             pipes.remove(r)
 
+        # remove birds that hit the top or bottom of the window
         for x, bird in enumerate(birds):
             if bird.y + bird.img.get_height() >= 730 or bird.y < 0:
                 birds.pop(x)
